@@ -1,11 +1,7 @@
 package btree
 
 const INTERNAL_MAX_KEY = 4
-type Node interface {
-	FindLastLE(findKey int) int
-	InsertKv(insertKey int, insertChild Node)
-	Split() Node
-}
+type Node any
 type BTreeInternalNode struct {
 	nkey   int
 	keys   [INTERNAL_MAX_KEY]int
@@ -131,12 +127,60 @@ func (node *BTreeLeafNode) Split() BTreeLeafNode {
 
 //B+Tree Structure
 type BPTree struct {
-	head *Node
+	head Node
 }
 
 func NewBPTree() BPTree {
-	var head Node
+	newINode := NewINode()
 	return BPTree{
-		head: &head,
+		head: &newINode,
 	}
+}
+func (tree *BPTree) insertRecursive(node Node, insertKey int, insertValue int) Node {
+    if convert, ok := node.(*BTreeInternalNode); ok {
+        // Internal node: navigate down
+        pos := convert.FindLastLE(insertKey)
+        child := convert.children[pos]
+        insertResult := tree.insertRecursive(child, insertKey, insertValue)
+        
+        // Child split? Insert promoted key
+        if insertResult != nil {
+            if childConvert, ok := insertResult.(*BTreeInternalNode); ok {
+                convert.InsertKv(childConvert.keys[0], childConvert)
+            } else {
+                childConvert := insertResult.(*BTreeLeafNode)
+                convert.InsertKv(childConvert.keys[0], childConvert)
+            }
+        }
+        
+        // Check if this node needs to split
+        if convert.nkey == INTERNAL_MAX_KEY {
+            return convert.Split()
+        }
+        
+    } else {
+        // Leaf node: insert here
+        convert := node.(*BTreeLeafNode)
+        convert.InsertKv(insertKey, insertValue)
+        
+        if convert.nkey == INTERNAL_MAX_KEY {
+            return convert.Split()
+        }
+    }
+	return nil
+}
+
+func (tree *BPTree) Insert(insertKey int, insertValue int) {
+    insertResult := tree.insertRecursive(tree.head, insertKey, insertValue)
+	if insertResult != nil {
+		// Root split: create new root
+		childConvert := insertResult.(*BTreeInternalNode)
+		newHead := NewINode()
+		newHead.nkey = 2
+		newHead.keys[0] = tree.head.(*BTreeInternalNode).keys[0]
+		newHead.keys[1] = childConvert.keys[0]
+		newHead.children[0] = tree.head.(*BTreeInternalNode).children[0]
+		newHead.children[1] = childConvert.children[0]
+		tree.head = &newHead	
+    }
 }
