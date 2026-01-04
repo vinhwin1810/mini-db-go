@@ -6,6 +6,7 @@ import (
 )
 
 func Test_Insert(t *testing.T) {
+	fmt.Println("Test Insert Key-Value into Internal Node")
 	node := NewINode()
 	node.InsertKv(1, nil)
 	if node.nkey != 1 {
@@ -20,6 +21,7 @@ func Test_Insert(t *testing.T) {
 	fmt.Print(node)
 }
 func Test_Split(t *testing.T) {
+	fmt.Println("Test Split Node")
 	node := NewINode()
 	node.InsertKv(3, nil)
 	node.InsertKv(10, nil)
@@ -43,6 +45,7 @@ func Test_Split(t *testing.T) {
 	}
 }
 func TestLNode(t *testing.T) {
+	fmt.Println("Test Leaf Node")
 	leaf := NewLNode()
 	leaf.InsertKv(1, 100)
 	leaf.InsertKv(3, 300)
@@ -58,5 +61,20 @@ func TestLNode(t *testing.T) {
 	}
 	if leaf.keys[2] != 3 || leaf.values[2] != 300 {
 		t.Errorf("Got key-value= %v-%v, expect %v-%v", leaf.keys[2], leaf.values[2], 3, 300)
+	}
+}
+func TestBTree(t *testing.T) {
+	fmt.Println("Test B+ Tree")
+	tree := NewBPTree()
+	//Insert
+	// head = []
+	tree.Insert(1, 1)
+	fmt.Println("Tree Head: ", tree.head.(*BTreeInternalNode).children[0])
+	if tree.head.(*BTreeInternalNode).nkey != 1 {
+		t.Errorf("Got nkey= %v, expect %v", tree.head.(*BTreeInternalNode).nkey, 1)
+	}
+	child := tree.head.(*BTreeInternalNode).children[0]
+	if (*child).(*BTreeLeafNode).nkey != 1 {
+		t.Errorf("Got key= %v, expect %v", (*child).(*BTreeLeafNode).values[0], 1)
 	}
 }

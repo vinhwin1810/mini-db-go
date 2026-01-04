@@ -138,16 +138,28 @@ func NewBPTree() BPTree {
 }
 func (tree *BPTree) insertRecursive(node Node, insertKey int, insertValue int) Node {
     if convert, ok := node.(*BTreeInternalNode); ok {
-        // Internal node: navigate down
+        // Check if => Internal node: navigate down
         pos := convert.FindLastLE(insertKey)
+		// special process for -1 pos
+		// insert in the beginning
+		if pos == -1 {
+			firstLeaf := NewLNode()
+			firstLeaf.InsertKv(insertKey, insertValue)
+			convert.InsertKv(insertKey, &firstLeaf)
+		}else{
         child := convert.children[pos]
+		// go down to children and keep inserting
         insertResult := tree.insertRecursive(child, insertKey, insertValue)
         
+		// => if nil => no split occurred
         // Child split? Insert promoted key
         if insertResult != nil {
+			// Insert the new key-child pair into this internal node
             if childConvert, ok := insertResult.(*BTreeInternalNode); ok {
                 convert.InsertKv(childConvert.keys[0], childConvert)
-            } else {
+            } else 
+			// 
+			{
                 childConvert := insertResult.(*BTreeLeafNode)
                 convert.InsertKv(childConvert.keys[0], childConvert)
             }
@@ -157,6 +169,8 @@ func (tree *BPTree) insertRecursive(node Node, insertKey int, insertValue int) N
         if convert.nkey == INTERNAL_MAX_KEY {
             return convert.Split()
         }
+		return nil
+	}
         
     } else {
         // Leaf node: insert here
